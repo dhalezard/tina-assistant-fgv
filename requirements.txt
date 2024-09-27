@@ -1,0 +1,4 @@
+The required dependencies are:
+- openai
+- flask
+- knowledge doc (knowledge.txt)
