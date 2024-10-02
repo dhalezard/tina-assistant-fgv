@@ -1,25 +1,35 @@
 import json
 import os
 import time
+import functions
 from openai import OpenAI
 from flask import Flask, request, jsonify
-import functions
+from flask_cors import CORS
 from packaging import version
 
-OPENAI_API_KEY = os.environ['OPENAI_API_KEY']
+OPENAI_API_KEY = os.getenv['OPENAI_API_KEY']
 
 app = Flask(__name__)
 client = OpenAI(api_key=OPENAI_API_KEY)
 
+CORS(app, resources={r"/*": {"origins": "http://manychat.com"}})
+
 # Load assistant ID from file or create new one
 assistant_id = functions.create_assistant(client)
 print("Assistant created with ID:", assistant_id)
+
+# Endpoint for testing only
+@app.route('/test', methods=['POST'])
+def testing():
+  print("tested")
+  return 
 
 # Create thread
 @app.route('/start', methods=['GET'])
 def start_conversation():
   thread = client.beta.threads.create()
   print("New conversation started with thread ID:", thread.id)
+  print(OPENAI_API_KEY)
   return jsonify({"thread_id": thread.id})
 
 # Start run
@@ -28,6 +38,7 @@ def chat():
   data = request.json
   thread_id = data.get('thread_id')
   user_input = data.get('message', '')
+  print(OPENAI_API_KEY)
   if not thread_id:
     print("Error: Missing thread_id in /chat")
     return jsonify({"error": "Missing thread_id"}), 400
@@ -48,6 +59,7 @@ def check_run_status():
   data = request.json
   thread_id = data.get('thread_id')
   run_id = data.get('run_id')
+  print(OPENAI_API_KEY)
   if not thread_id or not run_id:
     print("Error: Missing thread_id or run_id in /check")
     return jsonify({"response": "error"})
@@ -72,11 +84,12 @@ def check_run_status():
           "response": message_content.value,
           "status": "completed"
       })
-      
+
     time.sleep(1)
 
   print("Run timed out")
   return jsonify({"response": "timeout"})
 
 if __name__ == '__main__':
-  app.run(host='0.0.0.0', port=8080)
+  # app.run(host='0.0.0.0', port=8080)
+  app.run()
